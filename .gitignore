@@ -1,0 +1,30 @@
+# Data
+data/
+datasets/
+
+# Checkpoints (download via scripts/download_checkpoints.py)
+checkpoints/*.pth
+checkpoints/*.pth.tar
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# LaTeX build artifacts
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.synctex.gz
+paper/*.bbl
+paper/*.blg
+paper/*.fls
+paper/*.fdb_latexmk

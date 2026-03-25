@@ -158,19 +158,45 @@ def load_sam(device='cuda'):
     return model.to(device).eval(), TF_IMAGENET, 'timm'
 
 
+# ── Expanded SSL set (N=11) ──
+
+def load_eva02(device='cuda'):
+    """EVA-02 ViT-B/16 — CLIP + MIM combined (timm, Merged-2B data)."""
+    import timm
+    model = timm.create_model('eva02_base_patch16_clip_224.merged2b', pretrained=True, dynamic_img_size=True)
+    return model.to(device).eval(), TF_IMAGENET, 'timm'
+
+
+def load_openclip(device='cuda'):
+    """OpenCLIP ViT-B/16 — contrastive on LAION-2B (timm)."""
+    import timm
+    model = timm.create_model('vit_base_patch16_clip_224.laion2b', pretrained=True, dynamic_img_size=True)
+    return model.to(device).eval(), TF_IMAGENET, 'timm'
+
+
+def load_metaclip(device='cuda'):
+    """MetaCLIP ViT-B/16 — curated contrastive on 2.5B data (timm)."""
+    import timm
+    model = timm.create_model('vit_base_patch16_clip_224.metaclip_2pt5b', pretrained=True, dynamic_img_size=True)
+    return model.to(device).eval(), TF_IMAGENET, 'timm'
+
+
 # ═══════════════════════════════════════════════════════
 # Registry
 # ═══════════════════════════════════════════════════════
 
 SSL_CORE = {
-    'DINO':    load_dino,
-    'MoCo-v3': load_mocov3,
-    'MAE':     load_mae,
-    'CLIP':    load_clip,
-    'SigLIP':  load_siglip,
-    'BEiT':    load_beit,
-    'BEiTv2':  load_beitv2,
-    'iBOT':    load_ibot,
+    'DINO':     load_dino,
+    'MoCo-v3':  load_mocov3,
+    'MAE':      load_mae,
+    'CLIP':     load_clip,
+    'SigLIP':   load_siglip,
+    'BEiT':     load_beit,
+    'BEiTv2':   load_beitv2,
+    'iBOT':     load_ibot,
+    'EVA-02':   load_eva02,
+    'OpenCLIP': load_openclip,
+    'MetaCLIP': load_metaclip,
 }
 
 BOUNDARY = {

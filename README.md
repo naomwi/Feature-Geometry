@@ -8,97 +8,123 @@
 
 Eigenspectral metrics (RankMe, n₈₀, LID) **fail** to predict unsupervised segmentation quality. Only **Patch Spatial Autocorrelation (PSA)** — the mean cosine similarity between neighboring patch features — significantly predicts Segmentation Covering across three benchmarks.
 
-| Dataset | N | r | p |
-|---------|---|-------|---------|
-| BSDS500 | 11 | 0.862 | 0.0007 ✅ |
-| COCO | 11 | 0.876 | 0.0004 ✅ |
-| ADE20K | 11 | 0.833 | 0.0015 ✅ |
+| Dataset | N | Pearson r | p-value | Significant? |
+|---------|---|-----------|---------|:---:|
+| BSDS500 | 11 | 0.862 | 0.0007 | ✅ |
+| COCO    | 11 | 0.876 | 0.0004 | ✅ |
+| ADE20K  | 11 | 0.833 | 0.0015 | ✅ |
 
-**PSA-weighted (eigenvalue-weighted)**: r=0.964, p<0.00001 on BSDS500.
+Rankings are highly consistent across datasets (Spearman ρ = 0.909–0.945, all p < 0.001).
 
 ## Repository Structure
 
 ```
-├── paper/                    # LaTeX source + figures
-│   ├── result.tex
+Feature-Geometry/
+├── reproduce_all.py              # ⭐ One-click reproduction (see below)
+├── requirements.txt              # Python dependencies
+│
+├── src/                          # Core library
+│   ├── pipeline.py               # Model loading (16 backbones) & feature extraction
+│   └── metrics.py                # PSA, SC (BSDS/COCO/ADE20K), geometry metrics
+│
+├── experiments/                  # Experiment scripts (one per paper result)
+│   ├── run_unified_table2.py     # → Table 2: N=11, all metrics, 3 datasets
+│   ├── run_clustering_invariance.py → Table 1: K-Means/GMM/Spectral
+│   ├── run_unified_ade20k.py     # → Sect 4.2: ADE20K cross-dataset
+│   ├── run_unified_voc_coco.py   # → Sect 4.2: COCO cross-dataset
+│   ├── run_cross_dataset.py      # → Mixed-arch cross-dataset
+│   ├── run_boundary.py           # → Sect 4.3: 16-model boundary analysis
+│   ├── run_psa_ablation.py       # → Sect 4.4: PSA variants
+│   ├── run_psa_selection.py      # → Sect 4.5: PSA-guided selection
+│   ├── run_within_backbone.py    # → Sect 4.6: per-image n80 vs SC
+│   ├── generate_pca_figure.py    # → Fig 2: PCA feature visualization
+│   ├── generate_figures.py       # → Fig 3: PSA vs SC scatter
+│   └── generate_loo_figure.py    # → Fig 4: LOO stability chart
+│
+├── scripts/                      # Setup helpers
+│   ├── download_data.py          # Download BSDS500, COCO, ADE20K
+│   └── download_checkpoints.py   # Download MoCo-v3, iBOT checkpoints
+│
+├── paper/                        # LaTeX source & generated figures
 │   └── figures/
-├── src/                      # Core library
-│   ├── pipeline.py           # Model loading & feature extraction (16 backbones)
-│   └── metrics.py            # PSA, SC (BSDS/COCO/ADE20K/VOC), geometry metrics
-├── experiments/              # Reproduction scripts
-│   ├── run_unified_table2.py       # Table 2: N=11 SSL, all metrics (seed=42)
-│   ├── run_clustering_invariance.py # Table 1: KMeans/GMM/Spectral (6 backbones)
-│   ├── run_cross_dataset.py        # Table 4: mixed-arch SC (BSDS/ADE/COCO)
-│   ├── run_unified_ade20k.py       # Sect 4.3: ADE20K cross-dataset
-│   ├── run_unified_voc_coco.py     # Sect 4.3: VOC + COCO cross-dataset
-│   ├── run_boundary.py             # Sect 4.4: 16-model boundary analysis
-│   ├── run_psa_ablation.py         # Sect 4.5: PSA variants (4/8-conn, L2, weighted)
-│   ├── run_psa_selection.py        # Sect 4.6: PSA-guided backbone selection
-│   ├── run_within_backbone.py      # Sect 4.7: per-image n80 vs SC
-│   └── generate_figures.py         # Fig 3: PSA vs SC scatter plot
-├── scripts/                  # Setup helpers
-│   ├── download_checkpoints.py
-│   └── download_data.py
-├── requirements.txt
-└── README.md
+│       ├── feature_pca_viz.pdf
+│       ├── loo_stability.pdf
+│       └── fig_psa_sc_v2.png
+│
+└── data/                         # Dataset root (not tracked)
+    ├── BSDS500/images/{train,val,test}/
+    ├── COCO/{val2017/, annotations/instances_val2017.json}
+    └── ADE20K/{images/validation/, annotations/validation/}
 ```
 
 ## Quick Start
 
+### 1. Setup
+
 ```bash
-# 1. Install dependencies
+git clone https://github.com/<your-repo>/Feature-Geometry.git
+cd Feature-Geometry
 pip install -r requirements.txt
-
-# 2. Download datasets (BSDS500, VOC, ADE20K, COCO)
-python scripts/download_data.py
-
-# 3. Download model checkpoints (MoCo-v3, iBOT)
-python scripts/download_checkpoints.py
-
-# 4. Run Table 2 — unified N=11 benchmark (all metrics)
-python experiments/run_unified_table2.py
-
-# 5. Run Table 1 — clustering invariance (KMeans/GMM/Spectral)
-python experiments/run_clustering_invariance.py
-
-# 6. Cross-dataset generalization
-python experiments/run_unified_ade20k.py
-python experiments/run_unified_voc_coco.py
-
-# 7. Table 4 — mixed-architecture cross-dataset
-python experiments/run_cross_dataset.py
-
-# 8. Boundary analysis (16 models, Fig. 3)
-python experiments/run_boundary.py
-
-# 9. PSA variants ablation
-python experiments/run_psa_ablation.py
-
-# 10. PSA-guided backbone selection
-python experiments/run_psa_selection.py
-
-# 11. Within-backbone spectral analysis
-python experiments/run_within_backbone.py
-
-# 12. Generate figures
-python experiments/generate_figures.py
 ```
+
+### 2. Download Data & Checkpoints
+
+```bash
+python scripts/download_data.py          # BSDS500, COCO, ADE20K
+python scripts/download_checkpoints.py   # MoCo-v3, iBOT (others auto-download)
+```
+
+### 3. Reproduce All Results
+
+```bash
+# Run everything (Tables 1-2, Figures 2-4, all sections)
+python reproduce_all.py
+
+# Or run specific items:
+python reproduce_all.py --table 2         # Table 2 only
+python reproduce_all.py --figure 2        # PCA visualization only
+python reproduce_all.py --section 4.2     # Cross-dataset section
+python reproduce_all.py --list            # Show all available experiments
+```
+
+## Paper ↔ Code Mapping
+
+| Paper Result | Script | Key Output |
+|---|---|---|
+| **Table 1**: Clustering invariance | `run_clustering_invariance.py` | SC per backbone × {K-Means, GMM, Spectral} |
+| **Table 2**: All metrics + SC (3 datasets) | `run_unified_table2.py` | SC(BSDS/COCO/ADE) + 7 metrics × 11 backbones |
+| **Fig 2**: PCA feature visualization | `generate_pca_figure.py` | `paper/figures/feature_pca_viz.pdf` |
+| **Fig 3**: PSA vs SC scatter plot | `generate_figures.py` | `paper/figures/fig_psa_sc_v2.png` |
+| **Fig 4**: LOO stability | `generate_loo_figure.py` | `paper/figures/loo_stability.pdf` |
+| **Sect 4.2**: Cross-dataset | `run_unified_ade20k.py`, `run_unified_voc_coco.py` | PSA→SC correlations across datasets |
+| **Sect 4.3**: Boundary conditions | `run_boundary.py` | 16-model PSA/SC with outlier detection |
+| **Sect 4.4**: PSA variants | `run_psa_ablation.py` | 4-conn vs 8-conn, cosine vs L2, weighted |
+| **Sect 4.5**: PSA-guided selection | `run_psa_selection.py` | Rank backbones by PSA → predict SC |
+| **Sect 4.6**: Within-backbone | `run_within_backbone.py` | Per-image n80 vs SC (6 backbones) |
+
+## Experimental Configuration
+
+All experiments use:
+- **Seed**: 42 (fixed for reproducibility)
+- **N images**: 50 per metric computation (200 for within-backbone)
+- **Clustering**: K-Means, K=4, on 32-d PCA features (ℓ₂-normalized)
+- **Evaluation**: Segmentation Covering (SC)
 
 ## Models (11 SSL Core ViT-B/16)
 
-| Backbone | Source | Paradigm |
-|----------|--------|----------|
-| DINO | `torch.hub: facebookresearch/dino` | Self-distillation |
-| MoCo-v3 | Local checkpoint (see download script) | Contrastive |
-| MAE | `timm: vit_base_patch16_224.mae` | Masked autoencoder |
-| CLIP | `openai/clip: ViT-B/16` | Language-Image |
-| SigLIP | `timm: vit_base_patch16_siglip_224.webli` | Sigmoid contrastive |
-| BEiT | `timm: beit_base_patch16_224.in22k_ft_in22k_in1k` | Masked image tokenizer |
-| BEiTv2 | `timm: beitv2_base_patch16_224.in1k_ft_in22k_in1k` | Masked VQ-KD |
-| iBOT | Local checkpoint (see download script) | Masked + self-distillation |
-| EVA-02 | `timm: eva02_base_patch16_clip_224.merged2b` | CLIP + MIM |
-| OpenCLIP | `timm: vit_base_patch16_clip_224.laion2b` | Contrastive (LAION-2B) |
-| MetaCLIP | `timm: vit_base_patch16_clip_224.metaclip_2pt5b` | Contrastive (2.5B) |
+| Backbone | Source | Paradigm | PSA | SC (BSDS) |
+|----------|--------|----------|-----|-----------|
+| **iBOT** | Local checkpoint | Masked + self-distill | .713 | **.570** |
+| MoCo-v3 | Local checkpoint | Contrastive | .861 | .555 |
+| DINO | `torch.hub: facebookresearch/dino` | Self-distillation | .625 | .546 |
+| MAE | `timm: vit_base_patch16_224.mae` | Masked autoencoder | .731 | .509 |
+| OpenCLIP | `timm: vit_base_patch16_clip_224.laion2b` | Contrastive (LAION-2B) | .596 | .506 |
+| MetaCLIP | `timm: vit_base_patch16_clip_224.metaclip_2pt5b` | Contrastive (2.5B) | .672 | .493 |
+| CLIP | `openai/clip: ViT-B/16` | Language-Image | .702 | .486 |
+| SigLIP | `timm: vit_base_patch16_siglip_224.webli` | Sigmoid contrastive | .449 | .405 |
+| BEiT | `timm: beit_base_patch16_224.in22k_ft_in22k_in1k` | Masked tokenizer | .515 | .399 |
+| EVA-02 | `timm: eva02_base_patch16_clip_224.merged2b` | CLIP + MIM | .479 | .376 |
+| BEiTv2 | `timm: beitv2_base_patch16_224.in1k_ft_in22k_in1k` | Masked VQ-KD | .449 | .343 |
 
 ## Citation
 

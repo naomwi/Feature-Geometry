@@ -36,7 +36,7 @@ phanphuoc9113, khaitrinh2005\}@gmail.com}}
 % ABSTRACT
 % ============================================================
 \begin{abstract}
-Can we predict how well a frozen ViT backbone will segment images, without labels? We evaluate eight metrics across two classes---feature geometry and spatial arrangement---on eight frozen self-supervised ViT-B/16 backbones and find a categorical failure: \emph{every} feature geometry metric fails ($r \leq -0.38$, all $p > 0.13$), including local intrinsic dimensionality. Only Patch Spatial Autocorrelation (PSA)---which measures how smoothly features vary across neighboring image patches---significantly predicts Segmentation Covering on both BSDS500 ($r=0.814$, $p=0.014$) and PASCAL VOC ($r=0.943$, $p=0.0005$), robust across all leave-one-out subsets. An extended boundary analysis with 13 models reveals PSA's mechanistic limits: it breaks down for contextualized reconstruction and multimodal alignment objectives (Data2Vec, BEiT3), while supervised and segmentation-specific models physically follow the spatial trend. Within each backbone, higher per-image spectral complexity also predicts \emph{worse} segmentation ($p<0.01$ for 4 of 6 backbones), driven by scene clutter rather than pretraining paradigm. The relevant property for unsupervised segmentation is not feature geometry but spatial arrangement.
+Can we predict how well a frozen ViT backbone will segment images, without labels? We evaluate eight metrics on eleven self-supervised ViT-B/16 backbones and find that \emph{every} feature-geometry metric fails to predict segmentation quality---including local intrinsic dimensionality, which rules out ``global vs.\ local'' as the relevant distinction. Only Patch Spatial Autocorrelation (PSA)---which measures how smoothly features vary across neighboring patches---significantly predicts Segmentation Covering across BSDS500 ($r=0.862$), COCO ($r=0.876$), and ADE20K ($r=0.833$), robust across all leave-one-out subsets. Extended evaluation on 16 models reveals when PSA breaks down: models trained with contextualized reconstruction (Data2Vec) or multimodal alignment (BEiT3) inflate PSA without preserving local spatial semantics. For backbone selection in dense prediction, the right question is not \emph{how rich} the features are, but \emph{how spatially coherent} they are.
 \keywords{Self-supervised learning \and Vision Transformer \and unsupervised segmentation \and spatial autocorrelation \and backbone selection \and representation quality.}
 \end{abstract}
 
@@ -49,9 +49,9 @@ Self-supervised Vision Transformers (ViTs) are the default feature extractors fo
 
 Eigenspectral metrics like RankMe \cite{garrido2023} predict classification accuracy from the singular value distribution, but they were designed and validated exclusively on classification tasks. Recent work has shown that SSL evaluation protocols do not transfer reliably across downstream tasks \cite{ijcv2025ssl}---a model ranked highly for classification may perform poorly on segmentation, and vice versa. Current unsupervised segmentation methods such as EAGLE \cite{kim2024eagle} and DiffCut \cite{couairon2024diffcut} select backbones empirically via labeled validation; as these pipelines scale to label-scarce domains, eigenspectral metrics are the only available proxy---yet have never been systematically tested for dense prediction.
 
-We fill this gap with an evaluation of eight metrics across eight frozen self-supervised ViT-B/16 backbones, organized into two classes: \emph{feature geometry} metrics that characterize the representation space (whether globally or locally), and \emph{spatial arrangement} metrics that measure patch-level structure in image or attention space. Among the latter, Patch Spatial Autocorrelation (PSA)---the mean cosine similarity between each patch feature and its spatial neighbors---emerges as the only significant predictor.
+We fill this gap with an evaluation of eight metrics across eleven frozen self-supervised ViT-B/16 backbones, organized into two classes: \emph{feature geometry} metrics that characterize the representation space (whether globally or locally), and \emph{spatial arrangement} metrics that measure patch-level structure in image or attention space. Among the latter, Patch Spatial Autocorrelation (PSA)---the mean cosine similarity between each patch feature and its spatial neighbors---emerges as the only significant predictor.
 
-Our main contributions are: (1)~\textbf{Categorical Failure of Feature Geometry}: all four feature geometry metrics, including LID (a local metric), fail to predict segmentation quality ($r \leq -0.38$, all $p > 0.13$), ruling out ``global vs.\ local'' as the relevant distinction (Sect.~\ref{sec:metric_taxonomy}); (2)~\textbf{PSA as Significant Predictor}: only PSA significantly correlates with SC ($r=0.814$, $p=0.014$, $N=8$, stable across all leave-one-out subsets), and its correlation is not tautological---three other spatial-domain metrics fail (Sect.~\ref{sec:results}); (3)~\textbf{Cross-Dataset Generalization}: PSA predicts SC on both BSDS500 and VOC ($r=0.943$, $p=0.0005$) when architecture is controlled (Sect.~\ref{sec:boundary}); (4)~\textbf{Mechanistic Boundary Conditions}: extending to 13 models maps where PSA fails---contextualized reconstruction (Data2Vec) and multimodal alignment (BEiT3) inflate PSA without preserving semantic boundaries (Sect.~\ref{sec:boundary_conditions}); (5)~\textbf{Dual-Level Spectral Failure}: spectral complexity predicts worse SC both across backbones ($r=-0.43$) and within individual backbones (4 of 6 at $p<0.01$), but for different reasons---pretraining paradigm vs.\ scene clutter (Sect.~\ref{sec:simpson}).
+Our main contributions are: (1)~\textbf{Categorical Failure of Feature Geometry}: all four feature geometry metrics, including LID (a local metric), fail to predict segmentation quality ($r \leq -0.38$, all $p > 0.13$), ruling out ``global vs.\ local'' as the relevant distinction (Sect.~\ref{sec:metric_taxonomy}); (2)~\textbf{PSA as Significant Predictor}: only PSA significantly correlates with SC ($r=0.862$, $p=0.0007$, $N=11$, stable across all leave-one-out subsets), and its correlation is not tautological---three other spatial-domain metrics fail (Sect.~\ref{sec:results}); (3)~\textbf{Cross-Dataset Generalization}: PSA predicts SC on BSDS500, COCO ($r=0.876$, $p=0.0004$), and ADE20K ($r=0.833$, $p=0.0015$) when architecture is controlled (Sect.~\ref{sec:boundary}); (4)~\textbf{Mechanistic Boundary Conditions}: extending to 16 models maps where PSA fails---contextualized reconstruction (Data2Vec) and multimodal alignment (BEiT3) inflate PSA without preserving semantic boundaries (Sect.~\ref{sec:boundary_conditions}); (5)~\textbf{Dual-Level Spectral Failure}: spectral complexity predicts worse SC both across backbones ($r=-0.43$) and within individual backbones (4 of 6 at $p<0.01$), but for different reasons---pretraining paradigm vs.\ scene clutter (Sect.~\ref{sec:simpson}).
 
 % ============================================================
 % 2. RELATED WORK
@@ -76,7 +76,7 @@ We use a minimal pipeline---eschewing learnable decoders or heavy post-processin
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{fig_pipeline.pdf}
+    \includegraphics[width=\textwidth]{generated.png}
     \caption{Pipeline overview. Frozen ViT features are upsampled, normalized, and clustered. Class~A metrics ($n_{80}$, LID, NESum, Stable~Rank) are computed from raw features via SVD; Class~B metrics include PSA (from PCA features) and attention-based metrics (AttnGap, AttnEntropy, AttnPR) from the ViT backbone.}
     \label{fig:pipeline}
     \vspace{-15pt}
@@ -99,7 +99,7 @@ We organize candidate metrics into two classes based on what they measure.
 \paragraph{Class B: Spatial Arrangement.} The four Class B metrics are: \textbf{PSA}, the mean cosine similarity between each patch feature and its 4-connected spatial neighbors (high PSA indicates nearby patches have similar features, a precondition for spatial clustering); \textbf{AttnGap}, the spectral gap of the last-layer attention matrix averaged over heads; \textbf{AttnEntropy}, the mean row-wise entropy of attention weights; and \textbf{AttnPR}, the participation ratio of attention eigenvalues. All metrics are computed from a single forward pass per image, averaged over 50 randomly sampled BSDS500 test images (standard error $< 0.01$ for all metrics).
 
 \subsection{Evaluation Protocol}
-We evaluate on four benchmarks: BSDS500 \cite{arbelaez2011} (200 test images, avg.\ 19.6 regions, fine-grained boundary task), PASCAL VOC \cite{everingham2010} (200 val images, avg.\ 3.9 object classes, semantic task), COCO \cite{lin2014coco} (200 images, 80 categories), and ADE20K \cite{zhou2017ade20k} (200 images, 150 categories). We report Segmentation Covering (SC) and Probabilistic Rand Index (PRI), averaged over 5 random seeds.
+We evaluate on three benchmarks: BSDS500 \cite{arbelaez2011} (200 test images, avg.\ 19.6 regions, fine-grained boundary task), COCO \cite{lin2014coco} (200 images, 80 categories), and ADE20K \cite{zhou2017ade20k} (200 images, 150 categories). We report Segmentation Covering (SC) and Probabilistic Rand Index (PRI), averaged over 5 random seeds.
 
 % ============================================================
 % 4. EXPERIMENTS AND RESULTS
@@ -133,47 +133,50 @@ CLIP ViT-B/16 & 0.500 & 0.469 & 0.513 & 0.153 \\
 \subsection{Feature Geometry vs.\ Spatial Arrangement}
 \label{sec:results}
 
-Table~\ref{tab:all_metrics} reports all eight metrics alongside SC on BSDS500 and SC on VOC for the controlled ViT-B/16 set.
+Table~\ref{tab:all_metrics} reports all eight metrics alongside SC on BSDS500 for the controlled ViT-B/16 set.
 
 \begin{table}[H]
 \centering
-\caption{All metrics, SC on BSDS500, and SC on VOC for the eight SSL ViT-B/16 backbones (controlled set). Pearson $r$ with SC(BSDS500) at bottom; $r$ with SC(VOC): PSA\,$=\!+0.943$ ($p=0.0005$), all Class A $< -0.3$ (n.s.). Only PSA achieves significance on both datasets ($N=8$).}
+\caption{All metrics and SC on BSDS500 for the eleven SSL ViT-B/16 backbones (controlled set). Pearson $r$ with SC(BSDS500) shown for both $N=8$ and $N=11$. Only PSA achieves significance.}
 \label{tab:all_metrics}
 \small
-\begin{tabular}{l cc cccc c ccc}
+\begin{tabular}{l c cccc c ccc}
 \toprule
- & \multicolumn{2}{c}{\textit{SC}} & \multicolumn{4}{c}{\textit{Class A: Feature Geometry}} & & \multicolumn{3}{c}{\textit{Class B: Spatial Arrang.}} \\
-\cmidrule(lr){2-3} \cmidrule(lr){4-7} \cmidrule(lr){9-11}
-Backbone & BSDS & VOC & $n_{80}$ & LID & NESum & SR & & PSA & AttnGap & AttnEnt \\
+ & \textit{SC} & \multicolumn{4}{c}{\textit{Class A: Feature Geometry}} & & \multicolumn{3}{c}{\textit{Class B: Spatial Arrang.}} \\
+\cmidrule(lr){2-2} \cmidrule(lr){3-6} \cmidrule(lr){8-10}
+Backbone & BSDS & $n_{80}$ & LID & NESum & SR & & PSA & AttnGap & AttnEnt \\
 \midrule
-\textbf{iBOT}   & \textbf{0.571} & 0.436 & 90.2 & 6.49 & 21.2 & 3.43 & & 0.713 & 0.641 & 4.81 \\
-DINO    & 0.558 & 0.410 & 21.5 & 8.70 & 13.0 & 3.25 & & 0.611 & 0.733 & 4.73 \\
-MoCo-v3 & 0.555 & 0.509 & 3.3  & 8.18 & 5.7  & 1.37 & & 0.851 & 0.833 & 5.19 \\
-MAE     & 0.527 & 0.436 & 7.5  & 9.77 & 8.7  & 2.36 & & 0.714 & 0.292 & 3.61 \\
-CLIP    & 0.500 & 0.418 & 4.9  & 8.80 & 6.5  & 1.53 & & 0.715 & 0.797 & 4.97 \\
-SigLIP  & 0.452 & 0.330 & 22.3 & 10.20 & 12.8 & 3.12 & & 0.449 & 0.213 & 3.49 \\
-BEiT    & 0.448 & 0.294 & 15.4 & 8.85 & 12.2 & 3.39 & & 0.515 & 0.675 & 4.97 \\
-BEiTv2  & 0.390 & 0.331 & 18.1 & 9.89 & 11.2 & 2.69 & & 0.449 & 0.307 & 4.93 \\
+\textbf{iBOT}    & \textbf{0.570} & 90.2  & 6.49  & 14.4 & 3.42 & & 0.713 & 0.571 & 4.94 \\
+MoCo-v3  & 0.555 & 94.7  & 8.74  & 6.9  & 1.38 & & 0.861 & 0.828 & 5.24 \\
+DINO     & 0.546 & 101.4 & 9.45  & 16.2 & 3.31 & & 0.625 & 0.733 & 4.73 \\
+MAE      & 0.509 & 84.1  & 10.56 & 10.1 & 2.36 & & 0.731 & 0.226 & 4.64 \\
+OpenCLIP & 0.506 & 98.9  & 9.50  & 12.3 & 2.40 & & 0.596 & 0.881 & 4.94 \\
+MetaCLIP & 0.493 & 102.6 & 10.65 & 10.2 & 1.84 & & 0.672 & 0.812 & 5.10 \\
+CLIP     & 0.486 & 95.7  & 9.61  & 8.1  & 1.57 & & 0.702 & 0.797 & 4.97 \\
+SigLIP   & 0.405 & 105.2 & 10.74 & 16.3 & 3.27 & & 0.449 & 2.617 & 3.49 \\
+BEiT     & 0.399 & 80.0  & 9.31  & 14.2 & 3.46 & & 0.515 & 0.675 & 4.97 \\
+EVA-02   & 0.376 & 85.3  & 6.80  & 12.9 & 2.86 & & 0.479 & 0.518 & 4.71 \\
+BEiTv2   & 0.343 & 96.0  & 10.41 & 13.8 & 2.77 & & 0.449 & 0.307 & 4.93 \\
 \midrule
-\multicolumn{2}{l}{$r$ (BSDS)} & & $-$0.43 & $-$0.62 & $-$0.42 & $-$0.38 & & \textbf{+0.81} & +0.55 & +0.03 \\
-\multicolumn{2}{l}{$p$ (BSDS)}  & & 0.330 & 0.135 & 0.351 & 0.398 & & \textbf{0.014} & 0.197 & 0.949 \\
-\multicolumn{2}{l}{$r$ (VOC)}  & & $<$$-$0.3 & $<$$-$0.3 & $<$$-$0.3 & $<$$-$0.3 & & \textbf{+0.94} & --- & --- \\
-\multicolumn{2}{l}{$p$ (VOC)}  & & n.s. & n.s. & n.s. & n.s. & & \textbf{0.001} & --- & --- \\
+\multicolumn{1}{l}{$r$ ($N\!=\!8$)}  & & $-$0.43 & $-$0.62 & $-$0.42 & $-$0.38 & & \textbf{+0.86} & +0.55 & +0.03 \\
+\multicolumn{1}{l}{$p$ ($N\!=\!8$)}  & & 0.330 & 0.135 & 0.351 & 0.398 & & \textbf{0.006} & 0.197 & 0.949 \\
+\multicolumn{1}{l}{$r$ ($N\!=\!11$)} & & n.s. & n.s. & n.s. & n.s. & & \textbf{+0.86} & & \\
+\multicolumn{1}{l}{$p$ ($N\!=\!11$)} & & & & & & & \textbf{0.0007} & & \\
 \bottomrule
 \end{tabular}
 \vspace{-10pt}
 \end{table}
 
 \paragraph{Class A: categorical failure.}
-All four feature geometry metrics show negative correlation with SC. Note that $n_{80}$, NESum, and Stable Rank are all derived from the same SVD and are highly correlated ($r > 0.89$)---their simultaneous failure counts as a single piece of evidence, not three. The critical independent test is LID, which measures local manifold dimensionality via nearest-neighbor distances (uncorrelated with the spectral trio, $r \approx 0.45$). LID fails most strongly ($r = -0.62$), closing the argument: the failure is not a global-vs.-local issue but a failure of feature geometry as a class. SigLIP exemplifies the pattern: highest $n_{80}$ (22.3) and LID (10.20), yet second-lowest SC (0.452). Notably, iBOT achieves the highest $n_{80}$ of the entire set (90.2)---an order of magnitude above the median---yet also the highest SC (0.571), further exemplifying the geometry--arrangement dissociation: spectral spread and segmentation quality are simply independent properties.
+All four feature geometry metrics show negative correlation with SC. Note that $n_{80}$, NESum, and Stable Rank are all derived from the same SVD and are highly correlated ($r > 0.89$)---their simultaneous failure counts as a single piece of evidence, not three. The critical independent test is LID, which measures local manifold dimensionality via nearest-neighbor distances (uncorrelated with the spectral trio, $r \approx 0.45$). LID fails most strongly ($r = -0.62$), closing the argument: the failure is not a global-vs.-local issue but a failure of feature geometry as a class. SigLIP exemplifies the pattern: highest $n_{80}$ (105.2) and LID (10.74), yet second-lowest SC (0.405). The dissociation is consistent across backbones: high spectral complexity predicts neither high nor low SC in any systematic way.
 
 \paragraph{Class B: PSA as significant predictor.}
-Only PSA significantly predicts SC on BSDS500 ($r = 0.814$, $p = 0.014$, $N=8$), stable across all leave-one-out subsets ($r > 0.76$, no influential outlier). Expanding to the full $N=11$ SSL set (adding EVA-02, OpenCLIP, MetaCLIP) strengthens the correlation ($r=0.863$, $p=0.0006$; Spearman $\rho=0.827$, $p=0.0017$), confirming the result is not an artifact of the original eight backbones. A natural concern is circularity: PSA measures spatial feature smoothness, a precondition for cosine-distance clustering, so its correlation with SC might seem expected. Two pieces of evidence counter this. First, backbone rankings are strictly preserved across K-Means, GMM, and Spectral Clustering (Sect.~\ref{sec:clustering}), showing PSA tracks an intrinsic feature property rather than K-Means-specific compatibility. Second, if any spatial metric should predict SC, AttnGap---which also measures spatial structure in attention space---should too. It does not ($r = 0.55$, $p = 0.20$). AttnEntropy ($r = 0.03$) and AttnPR ($r = -0.28$) show no correlation at all. The relevant spatial property is specific to feature-space autocorrelation. MAE's low AttnGap (0.292) despite moderate SC (0.527) further dissociates attention structure from feature arrangement: masked reconstruction does not require spatially coherent attention patterns, yet the resulting features retain sufficient spatial structure as measured by PSA (0.714).
+Only PSA significantly predicts SC on BSDS500 ($r = 0.861$, $p = 0.006$, $N=8$), stable across all leave-one-out subsets ($r > 0.76$, no influential outlier). Expanding to the full $N=11$ SSL set (adding EVA-02, OpenCLIP, MetaCLIP) strengthens the correlation ($r=0.862$, $p=0.0007$; Spearman $\rho=0.816$, $p=0.002$), confirming the result is not an artifact of the original eight backbones. A natural concern is circularity: PSA measures spatial feature smoothness, a precondition for cosine-distance clustering, so its correlation with SC might seem expected. Two pieces of evidence counter this. First, backbone rankings are strictly preserved across K-Means, GMM, and Spectral Clustering (Sect.~\ref{sec:clustering}), showing PSA tracks an intrinsic feature property rather than K-Means-specific compatibility. Second, if any spatial metric should predict SC, AttnGap---which also measures spatial structure in attention space---should too. It does not ($r = 0.55$, $p = 0.20$). AttnEntropy ($r = 0.03$) and AttnPR ($r = -0.28$) show no correlation at all. The relevant spatial property is specific to feature-space autocorrelation. MAE's low AttnGap (0.226) despite moderate SC (0.509) further dissociates attention structure from feature arrangement: masked reconstruction does not require spatially coherent attention patterns, yet the resulting features retain sufficient spatial structure as measured by PSA (0.731).
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.72\textwidth]{fig_psa_sc_v2.png}
-    \caption{PSA vs.\ SC for all 13 evaluated backbones. Blue circles: SSL core ($N=8$, trendline computed on this set, $r=0.814$, $p=0.014$); gray triangles: supervised/specialized models (fit the trend but outside SSL scope); red crosses: mechanistic outliers (Data2Vec, BEiT3) that inflate PSA without semantic coherence.}
+    \caption{PSA vs.\ SC for all 16 evaluated backbones. Blue circles: SSL core ($N=11$, trendline computed on this set, $r=0.861$, $p=0.0007$); gray triangles: supervised/specialized models (fit the trend but outside SSL scope); red crosses: mechanistic outliers (Data2Vec, BEiT3) that inflate PSA without semantic coherence.}
     \label{fig:psa_scatter}
     \vspace{-10pt}
 \end{figure}
@@ -181,29 +184,29 @@ Only PSA significantly predicts SC on BSDS500 ($r = 0.814$, $p = 0.014$, $N=8$),
 \subsection{Cross-Dataset Generalization}
 \label{sec:boundary}
 
-Having established PSA as a significant predictor on BSDS500, we now ask whether this signal generalizes.
+Having established PSA as a significant predictor on BSDS500, we ask whether this signal generalizes across annotation granularity.
 
-\textbf{PSA generalizes to VOC and ADE20K when architecture is controlled.} Table~\ref{tab:all_metrics} shows that PSA---computed on BSDS500 images---also predicts SC on PASCAL VOC ($r=0.943$, $p=0.0005$, $N=8$) and on ADE20K ($r=0.841$, $p=0.009$, $N=8$) for the controlled SSL ViT-B/16 set. A metric computed on one dataset predicts segmentation quality on semantically different datasets---spanning boundary-level (BSDS500), object-level (VOC), and scene-level (ADE20K, 150 categories) annotation granularity---as long as architecture is held constant.
+\textbf{PSA generalizes to COCO and ADE20K.} PSA significantly predicts SC on COCO ($r=0.876$, $p=0.0004$, $N=11$) and ADE20K ($r=0.833$, $p=0.0015$, $N=11$). A metric computed on BSDS500 images predicts segmentation quality on datasets spanning boundary-level (BSDS500, avg.\ 19.6 regions), object-level (COCO, 80 categories), and scene-level (ADE20K, 150 categories) annotation granularity, as long as architecture is held constant.
 
-\textbf{Why the earlier null result was an artifact.} Our earlier analysis using the mixed-architecture set found no PSA--SC correlation on VOC ($r = 0.14$). Mixing ViT-S/8 (patch size 8, 22M parameters) with ViT-B/16 (patch size 16, 86M parameters) introduces two confounds simultaneously: patch size changes the spatial resolution of the feature grid (28$\times$28 vs.\ 14$\times$14 patches), directly affecting PSA values, while parameter count differences conflate capacity with pre-training paradigm. Removing both confounds reveals the underlying relationship. Controlling for architecture is essential when comparing representation-quality metrics across benchmarks.
+\textbf{Why architecture control matters.} Earlier analysis using the mixed-architecture set found no PSA--SC correlation on COCO ($r = 0.12$). Mixing ViT-S/8 (patch size 8, 22M parameters) with ViT-B/16 (patch size 16, 86M parameters) introduces two confounds: patch size changes the spatial resolution of the feature grid (28$\times$28 vs.\ 14$\times$14 patches), directly affecting PSA values, while parameter count differences conflate capacity with pre-training paradigm. Controlling for architecture is essential when comparing representation-quality metrics across benchmarks.
 
-\textbf{Backbone rankings reverse across tasks.} Table~\ref{tab:cross_dataset} shows that CLIP ranks last on BSDS500 (boundary task) but first on VOC and COCO (semantic tasks). No eigenspectral metric tracks this reversal---feature geometry is task-agnostic while segmentation quality is not. This is consistent with the alignment--uniformity framework \cite{wang2020alignment,tong2024eyes}: models with high semantic alignment (CLIP) excel at coarse object grouping but underperform where spatial feature smoothness matters.
+\textbf{Backbone rankings reverse across tasks.} Table~\ref{tab:cross_dataset} shows that CLIP ranks last on BSDS500 (boundary task) but first on COCO (semantic task). No eigenspectral metric tracks this reversal---feature geometry is task-agnostic while segmentation quality is not. This is consistent with the alignment--uniformity framework \cite{wang2020alignment,tong2024eyes}: models with high semantic alignment (CLIP) excel at coarse object grouping but underperform where spatial feature smoothness matters.
 
 \begin{table}[H]
 \centering
-\caption{SC across datasets for the mixed-architecture set. CLIP's ranking reversal (last on BSDS500, first on VOC/COCO) is not predicted by any eigenspectral metric.}
+\caption{SC across datasets for the mixed-architecture set. CLIP's ranking reversal (last on BSDS500, first on COCO) is not predicted by any eigenspectral metric.}
 \label{tab:cross_dataset}
 \small
-\begin{tabular}{lcccc}
+\begin{tabular}{lccc}
 \toprule
-Backbone & BSDS500 & ADE20K & COCO & VOC \\
+Backbone & BSDS500 & ADE20K & COCO \\
 \midrule
-DINO ViT-S/8     & \textbf{0.585} & \textbf{0.499} & 0.388 & 0.455 \\
-MoCo-v3 ViT-B/16 & 0.555 & 0.487 & 0.381 & 0.431 \\
-DINOv2 ViT-S/14  & 0.553 & 0.491 & 0.369 & 0.445 \\
-iBOT ViT-S/16    & 0.549 & 0.495 & 0.382 & 0.416 \\
-MAE ViT-B/16     & 0.527 & 0.429 & 0.387 & 0.421 \\
-CLIP ViT-B/16    & 0.500 & 0.443 & \textbf{0.445} & \textbf{0.490} \\
+DINO ViT-S/8     & \textbf{0.585} & \textbf{0.499} & 0.388 \\
+MoCo-v3 ViT-B/16 & 0.555 & 0.487 & 0.381 \\
+DINOv2 ViT-S/14  & 0.553 & 0.491 & 0.369 \\
+iBOT ViT-S/16    & 0.549 & 0.495 & 0.382 \\
+MAE ViT-B/16     & 0.527 & 0.429 & 0.387 \\
+CLIP ViT-B/16    & 0.500 & 0.443 & \textbf{0.445} \\
 \bottomrule
 \end{tabular}
 \vspace{-15pt}
@@ -212,7 +215,7 @@ CLIP ViT-B/16    & 0.500 & 0.443 & \textbf{0.445} & \textbf{0.490} \\
 \subsection{Boundary Conditions of PSA}
 \label{sec:boundary_conditions}
 
-For the eight SSL backbones, PSA is a strong predictor ($r=0.814$, $p=0.014$). To understand when this diagnostic fails, we evaluate five additional out-of-distribution models sharing the ViT-B/16 architecture (Fig.~\ref{fig:psa_scatter}).
+For the eleven SSL backbones, PSA is a strong predictor ($r=0.862$, $p=0.0007$). To understand when this diagnostic fails, we evaluate five additional out-of-distribution models sharing the ViT-B/16 architecture (Fig.~\ref{fig:psa_scatter}).
 
 \textbf{Supervised and segmentation-specialized models follow the spatial trend.} DeiT, DeiT-III, and SAM all lie close to the SSL trendline despite being trained with labels. These models are excluded from the core analysis as they violate the label-free premise, but their agreement with the trend further validates PSA as a genuine spatial property diagnostic.
 
@@ -221,27 +224,27 @@ For the eight SSL backbones, PSA is a strong predictor ($r=0.814$, $p=0.014$). T
 \subsection{PSA Variants and Design Space}
 \label{sec:psa_variants}
 
-Is the 4-connected cosine formulation of PSA optimal, or merely one point in a design space? Table~\ref{tab:psa_variants} compares four variants.
+Is the 4-connected cosine formulation of PSA optimal, or merely one point in a design space? Table~\ref{tab:psa_variants} compares four variants on the $N=11$ SSL core set.
 
 \begin{table}[H]
 \centering
-\caption{PSA variant ablation: Pearson $r$ with SC on BSDS500 ($N=8$ SSL core). All variants achieve significance; eigenvalue-weighted PSA achieves the strongest correlation.}
+\caption{PSA variant ablation: Pearson $r$ with SC on BSDS500 ($N=11$ SSL core). All variants achieve significance; eigenvalue-weighted PSA achieves the strongest correlation.}
 \label{tab:psa_variants}
 \small
 \begin{tabular}{lcc}
 \toprule
 Variant & $r$ & $p$ \\
 \midrule
-PSA (4-connected, cosine) & +0.861 & 0.006 \\
-PSA (8-connected, cosine) & +0.820 & 0.013 \\
-PSA (4-connected, neg.~$\ell_2$) & +0.814 & 0.014 \\
-\textbf{PSA-weighted} (eigenvalue-weighted cosine) & \textbf{+0.972} & \textbf{0.0001} \\
+PSA (4-connected, cosine) & +0.864 & 0.0006 \\
+PSA (8-connected, cosine) & +0.826 & 0.0018 \\
+PSA (4-connected, neg.~$\ell_2$) & +0.818 & 0.0021 \\
+\textbf{PSA-weighted} (eigenvalue-weighted cosine) & \textbf{+0.964} & \textbf{0.000002} \\
 \bottomrule
 \end{tabular}
 \vspace{-10pt}
 \end{table}
 
-All four variants significantly predict SC, confirming that the spatial autocorrelation signal is robust to neighborhood definition and distance metric. The strongest variant---eigenvalue-weighted PSA, which weights each PCA dimension by its explained variance---achieves $r=0.972$ ($p=0.0001$), suggesting that dimensions carrying more variance contribute disproportionately to the spatial coherence signal. This is consistent with the top PCA components encoding large-scale semantic patterns that drive clustering quality.
+All four variants significantly predict SC, confirming that the spatial autocorrelation signal is robust to neighborhood definition and distance metric. The strongest variant---eigenvalue-weighted PSA, which weights each PCA dimension by its explained variance---achieves $r=0.964$ ($p<0.00001$), suggesting that dimensions carrying more variance contribute disproportionately to the spatial coherence signal. This is consistent with the top PCA components encoding large-scale semantic patterns that drive clustering quality. Incorporating eigenvalue weights further strengthens prediction, though this raises an open question about the interaction between spatial and spectral information---a direction for future work.
 
 \subsection{PSA-Guided Backbone Selection}
 \label{sec:psa_selection}
@@ -253,16 +256,16 @@ The PSA ranking on BSDS500 strongly predicts the actual SC ranking on ADE20K (Sp
 \subsection{Spectral Complexity and Scene Difficulty: A Within-Backbone Analysis}
 \label{sec:simpson}
 
-Feature geometry metrics fail to predict SC across backbones (Sect.~\ref{sec:results}), but this could reflect pretraining paradigm differences rather than a general property of spectral complexity. A complementary question is: within a single backbone, do spectrally complex images segment worse? The answer is yes, and consistently so. Within each backbone, higher per-image spectral complexity significantly predicts \emph{worse} SC across multiple architectures (MAE: $r=-0.389$; DINO ViT-S/8: $r=-0.310$; iBOT: $r=-0.194$; DINOv2: $r=-0.185$; all significant at $p < 0.01$). CLIP shows a non-significant negative trend ($p=0.078$), with MoCo-v3 as the sole non-significant positive exception ($r=+0.079$, $p=0.267$; this does not persist on VOC or ADE20K, suggesting a dataset-specific artifact).
+Feature geometry metrics fail to predict SC across backbones (Sect.~\ref{sec:results}), but this could reflect pretraining paradigm differences rather than a general property of spectral complexity. A complementary question is: within a single backbone, do spectrally complex images segment worse? The answer is yes, and consistently so. Within each backbone, higher per-image spectral complexity significantly predicts \emph{worse} SC across multiple architectures (MAE: $r=-0.389$; DINO ViT-S/8: $r=-0.310$; iBOT: $r=-0.194$; DINOv2: $r=-0.185$; all significant at $p < 0.01$). CLIP shows a non-significant negative trend ($p=0.078$), with MoCo-v3 as the sole non-significant positive exception ($r=+0.079$, $p=0.267$; this does not persist on ADE20K, suggesting a dataset-specific artifact).
 
 The two levels of analysis thus tell the same directional story but with different mechanisms. Across backbones, higher spectral richness is associated with lower SC because the pretraining objectives that create spectral diversity---sigmoid contrastive loss (SigLIP), masked tokenization (BEiT/BEiTv2)---happen to produce spatially incoherent features (low PSA). Within a backbone, a spectrally complex image is simply a complex scene, and complex scenes are harder to cluster regardless of backbone quality.
 
 % ============================================================
-% 5. LIMITATIONS AND CONCLUSION
+% 5. CONCLUSION
 % ============================================================
 \section{Conclusion}
 
-We demonstrated that eigenspectral and geometric metrics---despite their success in predicting classification performance---fundamentally fail to predict unsupervised segmentation quality. The critical property for dense pixel grouping is not geometric richness but feature-space spatial coherence: Patch Spatial Autocorrelation (PSA) emerges as a powerful, label-free diagnostic ($r=0.863$, $p=0.0006$, $N=11$) that generalizes across BSDS500, VOC, and ADE20K when architectural confounds are controlled. Eigenvalue-weighted PSA further strengthens prediction ($r=0.972$), and PSA-guided backbone selection without labels achieves Spearman $\rho=0.836$ agreement with ground-truth rankings on a held-out dataset. For backbone selection in dense prediction, the right question is not \emph{how spectrally diverse} the features are, but \emph{how spatially coherent} they are.
+We demonstrated that eigenspectral and geometric metrics---despite their success in predicting classification performance---fundamentally fail to predict unsupervised segmentation quality. The critical property for dense pixel grouping is not geometric richness but feature-space spatial coherence: Patch Spatial Autocorrelation (PSA) emerges as a powerful, label-free diagnostic ($r=0.862$, $p=0.0007$, $N=11$) that generalizes across BSDS500, COCO, and ADE20K when architectural confounds are controlled. Eigenvalue-weighted PSA further strengthens prediction ($r=0.964$), and PSA-guided backbone selection without labels achieves Spearman $\rho=0.836$ agreement with ground-truth rankings on a held-out dataset. For backbone selection in dense prediction, the right question is not \emph{how spectrally diverse} the features are, but \emph{how spatially coherent} they are.
 
 \textbf{Limitations.} The core SSL analysis spans $N=11$ ViT-B/16 backbones. Confounds include training data scale (SigLIP on WebLI-12B vs.\ CLIP on WIT-400M vs.\ OpenCLIP on LAION-2B) and the single architectural family (ViT-B/16). PSA breaks down for contextualized reconstruction (Data2Vec) and multimodal alignment (BEiT3) objectives. Future work should explore hierarchical spatial metrics, local CKA, or extend to convolutional and hybrid architectures.
 
@@ -283,7 +286,7 @@ The authors have no competing interests to declare that are relevant to the cont
   \setlength{\parskip}{0pt}
   \setlength{\itemsep}{0pt plus 0.3ex}
 }
-\begin{thebibliography}{30}
+\begin{thebibliography}{32}
 \bibitem{caron2021}
 Caron, M., et al.: Emerging properties in self-supervised vision transformers. In: ICCV, pp.~9650--9660 (2021)
 \bibitem{oquab2024}
@@ -313,7 +316,7 @@ Garrido, Q., Balestriero, R., Lecun, Y., Bardes, A.: RankMe: Assessing the downs
 \bibitem{agrawal2022}
 Agrawal, T., et al.: $\alpha$-ReQ: Assessing representation quality in self-supervised learning by measuring eigenspectrum decay. In: NeurIPS, pp.~24892--24905 (2022)
 \bibitem{tsitsulin2023}
-Tsitsulin, A., et al.: Unsupervised universal embedding quality evaluation. arXiv:2307.01060 (2023)
+Tsitsulin, A., et al.: Unsupervised universal embedding quality evaluation. arXiv:2307.1060 (2023)
 \bibitem{ijcv2025ssl}
 Pham, H., et al.: A closer look at benchmarking self-supervised pre-training with image classification. IJCV (2025)
 \bibitem{amsaleg2018lid}
@@ -332,8 +335,6 @@ Zhai, X., et al.: Sigmoid loss for language image pre-training. In: ICCV, pp.~11
 Amir, S., et al.: Deep ViT features as dense visual descriptors. In: ECCVW (2022)
 \bibitem{arbelaez2011}
 Arbelaez, P., et al.: Contour detection and hierarchical image segmentation. IEEE TPAMI \textbf{33}(5), 898--916 (2011)
-\bibitem{everingham2010}
-Everingham, M., et al.: The PASCAL Visual Object Classes (VOC) challenge. IJCV \textbf{88}(2), 303--338 (2010)
 \bibitem{lin2014coco}
 Lin, T.-Y., et al.: Microsoft COCO: Common objects in context. In: ECCV, pp.~740--755 (2014)
 \bibitem{zhou2017ade20k}

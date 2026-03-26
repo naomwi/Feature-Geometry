@@ -195,6 +195,58 @@ def compute_sc_ade(pred_labels, gt_path, h, w):
     return sc / total
 
 
+def compute_sc_coco(pred_labels, coco_api, img_id, h, w):
+    """Segmentation Covering for COCO (instance masks via pycocotools).
+
+    Args:
+        pred_labels: [h, w] integer cluster labels
+        coco_api: loaded pycocotools.coco.COCO instance
+        img_id: COCO image ID
+        h, w: grid dimensions
+
+    Returns:
+        float: SC (ignoring background)
+    """
+    ann_ids = coco_api.getAnnIds(imgIds=img_id, iscrowd=False)
+    anns = coco_api.loadAnns(ann_ids)
+    if len(anns) < 2:
+        return float('nan')
+
+    img_info = coco_api.loadImgs(img_id)[0]
+    oh, ow = img_info['height'], img_info['width']
+
+    gt = np.zeros((oh, ow), dtype=np.int32)
+    for i, ann in enumerate(anns):
+        mask = coco_api.annToMask(ann)
+        gt[mask > 0] = i + 1
+
+    gt_r = np.array(Image.fromarray(gt.astype(np.uint8)).resize((w, h), Image.NEAREST))
+    segs = np.unique(gt_r)
+    segs = segs[segs > 0]
+    if len(segs) < 2:
+        return float('nan')
+
+    total = np.sum(gt_r > 0)
+    if total == 0:
+        return float('nan')
+
+    sc = 0.0
+    for r in segs:
+        mr = (gt_r == r)
+        sr = mr.sum()
+        if sr == 0:
+            continue
+        best_iou = 0.0
+        for s in np.unique(pred_labels):
+            ms = (pred_labels == s)
+            inter = (mr & ms).sum()
+            union = (mr | ms).sum()
+            if union > 0:
+                best_iou = max(best_iou, inter / union)
+        sc += sr * best_iou
+    return sc / total
+
+
 # ═══════════════════════════════════════════════════════
 # Clustering Helper
 # ═══════════════════════════════════════════════════════

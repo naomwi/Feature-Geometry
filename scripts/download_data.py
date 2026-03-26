@@ -13,9 +13,12 @@ After downloading, your data/ directory should look like:
     │   ├── JPEGImages/           # All images
     │   ├── SegmentationClass/    # Semantic masks (.png)
     │   └── ImageSets/Segmentation/val.txt
-    └── ADE20K/
-        ├── images/validation/    # 2000 val images (.jpg)
-        └── annotations/validation/  # 2000 masks (.png)
+    ├── ADE20K/
+    │   ├── images/validation/    # 2000 val images (.jpg)
+    │   └── annotations/validation/  # 2000 masks (.png)
+    └── COCO/
+        ├── val2017/              # 5000 val images (.jpg)
+        └── annotations/          # instances_val2017.json
 """
 import os
 import sys
@@ -38,6 +41,11 @@ DATASETS = {
         'source': 'https://groups.csail.mit.edu/vision/datasets/ADE20K/',
         'direct': 'http://data.csail.mit.edu/places/ADEchallenge/ADEChallengeData2016.zip',
         'notes': 'Extract ADEChallengeData2016/ -> data/ADE20K/',
+    },
+    'COCO': {
+        'source': 'https://cocodataset.org/#download',
+        'direct': 'http://images.cocodataset.org/zips/val2017.zip + http://images.cocodataset.org/annotations/annotations_trainval2017.zip',
+        'notes': 'Extract val2017/ and annotations/ -> data/COCO/',
     },
 }
 

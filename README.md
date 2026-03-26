@@ -26,13 +26,16 @@ Eigenspectral metrics (RankMe, n₈₀, LID) **fail** to predict unsupervised se
 │   ├── pipeline.py           # Model loading & feature extraction (16 backbones)
 │   └── metrics.py            # PSA, SC (BSDS/COCO/ADE20K/VOC), geometry metrics
 ├── experiments/              # Reproduction scripts
-│   ├── run_unified_table2.py # N=11 SSL backbones, all metrics (Table 2)
-│   ├── run_unified_ade20k.py # ADE20K cross-dataset (seed=42)
-│   ├── run_unified_voc_coco.py # VOC + COCO cross-dataset (seed=42)
-│   ├── run_psa_ablation.py   # PSA variants (4-conn, 8-conn, L2, weighted)
-│   ├── run_ssl_core.py       # Original N=8 SSL core
-│   ├── run_boundary.py       # 16-model boundary analysis
-│   └── generate_figures.py   # Scatter plot generation
+│   ├── run_unified_table2.py       # Table 2: N=11 SSL, all metrics (seed=42)
+│   ├── run_clustering_invariance.py # Table 1: KMeans/GMM/Spectral (6 backbones)
+│   ├── run_cross_dataset.py        # Table 4: mixed-arch SC (BSDS/ADE/COCO)
+│   ├── run_unified_ade20k.py       # Sect 4.3: ADE20K cross-dataset
+│   ├── run_unified_voc_coco.py     # Sect 4.3: VOC + COCO cross-dataset
+│   ├── run_boundary.py             # Sect 4.4: 16-model boundary analysis
+│   ├── run_psa_ablation.py         # Sect 4.5: PSA variants (4/8-conn, L2, weighted)
+│   ├── run_psa_selection.py        # Sect 4.6: PSA-guided backbone selection
+│   ├── run_within_backbone.py      # Sect 4.7: per-image n80 vs SC
+│   └── generate_figures.py         # Fig 3: PSA vs SC scatter plot
 ├── scripts/                  # Setup helpers
 │   ├── download_checkpoints.py
 │   └── download_data.py
@@ -46,26 +49,38 @@ Eigenspectral metrics (RankMe, n₈₀, LID) **fail** to predict unsupervised se
 # 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. Download datasets
+# 2. Download datasets (BSDS500, VOC, ADE20K, COCO)
 python scripts/download_data.py
 
 # 3. Download model checkpoints (MoCo-v3, iBOT)
 python scripts/download_checkpoints.py
 
-# 4. Run unified Table 2 (all 11 backbones, all metrics)
+# 4. Run Table 2 — unified N=11 benchmark (all metrics)
 python experiments/run_unified_table2.py
 
-# 5. Run cross-dataset generalization
+# 5. Run Table 1 — clustering invariance (KMeans/GMM/Spectral)
+python experiments/run_clustering_invariance.py
+
+# 6. Cross-dataset generalization
 python experiments/run_unified_ade20k.py
 python experiments/run_unified_voc_coco.py
 
-# 6. Run PSA variants ablation
-python experiments/run_psa_ablation.py
+# 7. Table 4 — mixed-architecture cross-dataset
+python experiments/run_cross_dataset.py
 
-# 7. Run boundary analysis (Fig. 3, 16 models)
+# 8. Boundary analysis (16 models, Fig. 3)
 python experiments/run_boundary.py
 
-# 8. Generate figures
+# 9. PSA variants ablation
+python experiments/run_psa_ablation.py
+
+# 10. PSA-guided backbone selection
+python experiments/run_psa_selection.py
+
+# 11. Within-backbone spectral analysis
+python experiments/run_within_backbone.py
+
+# 12. Generate figures
 python experiments/generate_figures.py
 ```
 
